@@ -24,7 +24,7 @@ for (const file of candidates) {
   if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(text)) findings.push({ file, reason: '개인키 형태 발견' });
 }
 const example = dotenv.parse(await readFile('.env.example','utf8'));
-if (Object.entries(example).some(([key,value]) => /API_KEY|SERVICE_KEY|CLIENT_ID|CLIENT_SECRET|REST_TOKEN|REST_URL/.test(key) && value)) findings.push({ file: '.env.example', reason: '인증 설정 예시 값은 비워야 함' });
+if (Object.entries(example).some(([key,value]) => /KEY$|SECRET$|TOKEN$|PASSWORD$|REST_URL$|CLIENT_ID$/.test(key) && value)) findings.push({ file: '.env.example', reason: '인증 설정 예시 값은 비워야 함' });
 const ignored = git(['check-ignore', '--no-index', '.env', '.env.production', '.vercel/project.json', '.local-preview/preview.png']);
 if (ignored.status !== 0 || ignored.stdout.trim().split(/\r?\n/).length < 4) findings.push({ file: '.gitignore', reason: '비밀·로컬 파일 제외 규칙 확인 필요' });
 console.log(JSON.stringify({ status: findings.length ? 'failed' : 'passed', checkedFiles: candidates.length, checkedLocalSecretValues: values.length, findings }));

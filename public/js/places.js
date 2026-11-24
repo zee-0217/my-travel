@@ -88,7 +88,7 @@ function renderPlaces(data) {
       if (!planner || planner.isBusy()) return;
       try {
         add.disabled = true; feedback.textContent = '일정에 추가하고 있어요…';
-        const result = await planner.addPlace({ place, query: data.query, searchId: data.searchId, index, dayIndex: Number(day.value), time: time.value, endTime: end.value });
+        const result = await planner.addPlace({ place, query: data.query, searchId: data.searchId, searchToken: data.searchToken, index, dayIndex: Number(day.value), time: time.value, endTime: end.value });
         feedback.textContent = result;
       } catch (error) { feedback.textContent = error.message; }
       finally { refreshPlacePlanner(); }

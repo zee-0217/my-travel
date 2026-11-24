@@ -9,7 +9,7 @@
 - Vercel Express 진입점 기본 내보내기, `public/` CDN 보안 헤더, Node.js 24 설정, 최대 함수 300초·Agent 기본 240초 설정 추가.
 - `.gitignore`·`.vercelignore`와 빈 `.env.example`, 실제 로컬 인증값 대조·키 패턴 검사 준비. 비밀 값은 검사 결과에 출력하지 않음.
 - 기본 로컬 Node.js와 별도 Node.js 24 런타임에서 자동 테스트 **117개 통과**.
-- 모의 Redis를 공유하는 독립 서버 인스턴스 간 Agent 컨텍스트·검색 결과 복원, TTL, 인증 오류·안전한 오류 메시지·원자적 공유 호출 한도 테스트 통과.
+- Redis 없이 독립 서버 인스턴스 간 암호화 토큰으로 Agent 컨텍스트·검색 결과를 복원하는 방식을 추가. 변조·다른 키/환경·만료 거부, 실제 HTTP 장소 추가·수정과 내보내기 제외 검증. Redis 연결은 사용자 요청으로 생략.
 - 실제 Chrome에서 예산 쉼표, 사진 지역 선택·롤링, 검색 장소 추가·되돌리기·AI 반영, 일정 저장·열기·수정·삭제·JSON 내보내기 회귀 검사 통과.
 
 ## 실제 외부 API 호출 결과 — 로컬 production 설정
@@ -27,10 +27,10 @@
 | 생성한 일정에 실제 검색 장소 추가 | 성공 |
 | Agent의 실제 선택 Tool | search_places, get_place_details, get_routes, web_search 성공 |
 
-위 실제 로컬 호출은 로컬 메모리 세션을 사용함. 공유 Redis는 모의 응답으로 교차 인스턴스 동작을 검증했으며 아직 실제 운영 Redis 인증값으로 확인하지 않음.
+위 실제 로컬 호출은 로컬 메모리 세션을 사용함. 외부 Redis는 생성·연결하지 않음. Vercel용 암호화 토큰은 독립 서버 인스턴스를 사용한 자동 테스트로 검증함.
 
 ## 실제 배포에서 남은 확인
 
-Vercel 프로젝트 생성·인증, 환경변수·Upstash Redis 연결, 최종 배포 URL이 필요함. 최종 도메인에서 `npm run test:deployment -- https://실제주소 --live`를 실행하기 전까지 **실제 Vercel의 OpenAI·NAVER 호출 검증은 미완료**임. Web Dynamic Map 도메인 허용과 브라우저 마커·경로 표시도 최종 주소에서 확인해야 함.
+GitHub 업로드 및 Vercel 프로젝트 `my-travel` 생성·계정 인증 완료. 실제 API 키와 세션 암호화 키의 Vercel 등록은 명시적 사용자 승인 대기. 최종 도메인에서 `npm run test:deployment -- https://실제주소 --live`를 실행하기 전까지 **실제 Vercel의 OpenAI·NAVER 호출 검증은 미완료**임. Web Dynamic Map 도메인 허용과 브라우저 마커·경로 표시도 최종 주소에서 확인해야 함.
 
 비용과 호출량은 각 제공자 콘솔에서 점검. 테스트가 성공해도 미래의 API 쿼터·잔액·운영 가용성을 보장하지 않음.

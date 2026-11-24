@@ -419,7 +419,7 @@ $('#chat-form').addEventListener('submit', async (event) => {
   renderChat(); setBusy(true, true);
   $('#chat-cancel').hidden = false; $('#chat-cancel').disabled = false;
   try {
-    const updated = await requestPlanEdit({ planId: before.planId, request, targetDay }, { signal: controller.signal });
+    const updated = await requestPlanEdit({ planId: before.planId, sessionToken: before.sessionToken, request, targetDay }, { signal: controller.signal });
     if (controller.signal.aborted) return;
     previousTrip = before; previousActiveDay = beforeDay; trip = updated;
     chatMessages.push({ role: 'agent', text: updated.edit?.reason || '요청을 반영한 일정을 검증했어요.', changes: updated.edit?.changes?.length ? updated.edit.changes : ['장소·시간·조건의 변경을 확인하지 못했어요. 검증 결과를 확인해 주세요.'] });
@@ -492,7 +492,7 @@ form.addEventListener('submit', async (event) => {
     const notAdded = [];
     for (const selection of queuedPlaces) {
       if (result.days[selection.dayIndex]?.stops.some((stop) => stop.place?.name === selection.place.name && (stop.place.roadAddress || stop.place.address) === (selection.place.roadAddress || selection.place.address))) continue;
-      try { result = await requestAddPlace({ ...selection, place: undefined, query: undefined, planId: result.planId }, { signal: controller.signal }); }
+      try { result = await requestAddPlace({ ...selection, place: undefined, query: undefined, planId: result.planId, sessionToken: result.sessionToken }, { signal: controller.signal }); }
       catch (error) { if (controller.signal.aborted) throw error; notAdded.push(`${selection.place.name}: ${error.message}`); }
     }
     queuedPlaces = [];
@@ -580,7 +580,7 @@ initPlacePlanner({ getTrip: () => trip, isBusy: () => Boolean(pendingRequest), a
   try {
     let updated = candidate;
     if (trip.planId && selection.searchId) {
-      try { updated = await requestAddPlace({ planId: trip.planId, searchId: selection.searchId, index: selection.index, dayIndex: selection.dayIndex, time: selection.time, endTime: selection.endTime }, { signal: controller.signal }); }
+      try { updated = await requestAddPlace({ planId: trip.planId, sessionToken: trip.sessionToken, searchId: selection.searchId, searchToken: selection.searchToken, index: selection.index, dayIndex: selection.dayIndex, time: selection.time, endTime: selection.endTime }, { signal: controller.signal }); }
       catch (error) { if (!['PLAN_EXPIRED', 'PLAN_NOT_EDITABLE'].includes(error.code)) throw error; }
     }
     previousQueuedPlaces = structuredClone(queuedPlaces);

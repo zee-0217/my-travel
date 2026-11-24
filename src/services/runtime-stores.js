@@ -5,6 +5,7 @@ import { getPlanContext } from '../agents/plan-context.js';
 import { createPlanStore } from './plan-store.js';
 import { createPlaceSelections } from './place-selections.js';
 import { createRedisRest } from './redis-rest.js';
+import { createStatelessStores } from './stateless-sessions.js';
 
 const validId = (id) => typeof id === 'string' && /^[a-f0-9-]{36}$/.test(id);
 export function createSharedStores(redis, { namespace = 'travel-piece', ttlSeconds = 1800 } = {}) {
@@ -40,6 +41,7 @@ export function createSharedStores(redis, { namespace = 'travel-piece', ttlSecon
 }
 
 export function createRuntimeStores(config = env) {
-  if (config.deployment.vercel || config.redis.url || config.redis.token) return createSharedStores(createRedisRest(config.redis), { namespace: config.redis.namespace });
+  if (config.redis.url || config.redis.token) return createSharedStores(createRedisRest(config.redis), { namespace: config.redis.namespace });
+  if (config.deployment.vercel) return createStatelessStores({ secret:config.deployment.sessionSecret, namespace:config.redis.namespace });
   return { planStore: createPlanStore(), placeSelections: createPlaceSelections(), assertReady() {}, redis: null };
 }

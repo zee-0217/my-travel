@@ -17,7 +17,7 @@ export function createPlacesRouter({ searchPlaces = search_places, placeSelectio
         display: req.query.display === undefined ? 5 : typeof req.query.display === 'string' ? Number(req.query.display) : NaN,
         sort: req.query.sort === undefined ? 'random' : req.query.sort,
       }, { signal: controller.signal });
-      if (!res.destroyed) res.json({ ...result, searchId: await placeSelections.save(result) });
+      if (!res.destroyed) { const selection = await placeSelections.save(result); res.json({ ...result, ...(typeof selection === 'string' ? {searchId:selection} : selection) }); }
     } catch (error) {
       if (res.destroyed) return;
       const safe = error instanceof PlanError ? error : publicPlacesError(error);

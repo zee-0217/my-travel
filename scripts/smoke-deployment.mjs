@@ -40,7 +40,7 @@ if(live){
     const {plan}=await(await request('/api/plan',{region:'부산',startDate,duration:1,travelers:2,budget:300000,preferences:['관광'],transport:'car',requests:'여유로운 당일 관광을 두 곳 제안해 줘. 숙소는 필요 없어.',lodgingMode:'none',maxPlacesPerDay:4})).json(); assert.ok(plan.planId); assert.equal(plan.isSample,false); assert.equal(plan.days.length,1);
     const day=plan.days[0], index=places.places.findIndex((place)=>!day.stops.some((stop)=>stop.place?.name===place.name && (stop.place.roadAddress||stop.place.address)===(place.roadAddress||place.address)));
     assert.ok(index>=0,'추가할 서로 다른 검색 장소가 필요합니다.');
-    const added=await(await request('/api/plan/places',{planId:plan.planId,searchId:places.searchId,index,dayIndex:0,time:'18:00',endTime:'19:00'})).json(); assert.ok(added.plan.days[0].stops.some((stop)=>stop.place?.name===places.places[index].name));
+    const added=await(await request('/api/plan/places',{planId:plan.planId,sessionToken:plan.sessionToken,searchId:places.searchId,searchToken:places.searchToken,index,dayIndex:0,time:'18:00',endTime:'19:00'})).json(); assert.ok(added.plan.days[0].stops.some((stop)=>stop.place?.name===places.places[index].name));
     report.agentTools=plan.trace.map(({tool,status})=>({tool,status}));
   });
 }

@@ -42,7 +42,7 @@ test('Redis credentials stay in server Authorization headers; failures never dis
   const redis = createRedisRest({ url:'https://private-endpoint.upstash.io', token:'private-redis-token', fetchImpl:async (url, options) => { assert.equal(options.headers.Authorization,'Bearer private-redis-token'); assert.deepEqual(JSON.parse(options.body),['GET','session']); return Response.json({result:null}); } });
   assert.equal(await redis.command(['GET','session']),null);
   for (const status of [401,403,429,500]) await assert.rejects(createRedisRest({url:'https://private-endpoint.upstash.io',token:'secret',fetchImpl:async()=>new Response('private token',{status})}).command(['GET','session']),(error) => error.code === 'SESSION_STORE_UNAVAILABLE' && !/private|secret/.test(error.message));
-  const missing = createRuntimeStores({deployment:{vercel:true},redis:{url:'',token:'',namespace:'test'}}); assert.throws(()=>missing.assertReady(),(error)=>error.code==='SESSION_STORE_NOT_CONFIGURED');
+  const missing = createRuntimeStores({deployment:{vercel:true},redis:{url:'',token:'',namespace:'test'}}); assert.throws(()=>missing.assertReady(),(error)=>error.code==='SESSION_KEY_NOT_CONFIGURED');
 });
 test('production global request counters work across app instances and reject excess calls with Retry-After', async (t) => {
   const redis = fakeRedis(), options = {redis,enabled:true,aiLimit:1,apiLimit:2,namespace:'test',now:()=>10000};

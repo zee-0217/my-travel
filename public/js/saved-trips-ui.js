@@ -46,7 +46,7 @@ export function initSavedTrips({ getTrip, loadTrip, isBusy, notify }) {
   function open(entry) {
     closeEditor();
     const plan = structuredClone(entry.plan), session = sessions.get(entry.id);
-    if (session?.updatedAt === entry.updatedAt && !plan.localEditedAt) plan.planId = session.planId;
+    if (session?.updatedAt === entry.updatedAt && !plan.localEditedAt) { plan.planId = session.planId; plan.sessionToken = session.sessionToken; }
     activeId = entry.id; loadTrip(plan, entry.updatedAt); render();
     $('#saved-trips-status').textContent = `“${plan.title || plan.region}” 일정을 열었어요.`;
   }
@@ -75,7 +75,7 @@ export function initSavedTrips({ getTrip, loadTrip, isBusy, notify }) {
   function save(asCopy = false) {
     if (!store) throw new Error('브라우저 저장소를 사용할 수 없어요.');
     const trip = getTrip(), entry = store.save(trip, asCopy ? null : activeId);
-    if (trip.planId && !trip.localEditedAt) sessions.set(entry.id, { planId: trip.planId, updatedAt: entry.updatedAt });
+    if (trip.planId && !trip.localEditedAt) sessions.set(entry.id, { planId: trip.planId, sessionToken: trip.sessionToken, updatedAt: entry.updatedAt });
     else sessions.delete(entry.id);
     activeId = entry.id; render(); $('#saved-trips-status').textContent = '이 브라우저에 여행 일정을 저장했어요.'; notify('여행 일정을 저장했어요.');
   }

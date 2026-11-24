@@ -15,7 +15,7 @@ export function createApiLimits({ redis = null, enabled = env.deployment.vercel 
       if (redis) count = await redis.command(['EVAL', increment, '1', key, String(seconds + 1)]);
       else { if (counters.size > 4) counters.clear(); count = (counters.get(key) || 0) + 1; counters.set(key, count); }
       if (!Number.isSafeInteger(count) || count < 1) throw new Error('Invalid counter');
-      if (count > limit) return res.status(429).set({ 'Retry-After': String(seconds - Math.floor(now() / 1000) % seconds), 'Cache-Control': 'no-store' }).json({ error: { code: 'APP_RATE_LIMIT', message: ai ? '앱 전체의 시간당 AI 요청 한도에 도달했어요. 잠시 후 다시 시도해 주세요.' : '앱의 API 요청 한도에 도달했어요. 잠시 후 다시 시도해 주세요.' } });
+      if (count > limit) return res.status(429).set({ 'Retry-After': String(seconds - Math.floor(now() / 1000) % seconds), 'Cache-Control': 'no-store' }).json({ error: { code: 'APP_RATE_LIMIT', message: ai ? '서버의 시간당 AI 요청 한도에 도달했어요. 잠시 후 다시 시도해 주세요.' : '서버의 API 요청 한도에 도달했어요. 잠시 후 다시 시도해 주세요.' } });
       next();
     } catch (error) { const safe = publicPlanError(error); res.status(503).set('Cache-Control', 'no-store').json({ error: { code: safe.code, message: safe.message } }); }
   };

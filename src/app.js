@@ -29,7 +29,7 @@ export function createApp(options = {}) {
       connectSrc: ["'self'", 'https://*.naver.com', 'https://*.pstatic.net', 'https://*.naver.net', 'https://*.ntruss.com', 'https://kr-col-ext.nelo.navercorp.com', ...developmentMapResources],
     } },
   }));
-  app.use(express.json({ limit: '32kb' }));
+  app.use(express.json({ limit: '2mb' }));
   app.use('/api/health', healthRouter);
   app.use('/api/status', statusRouter);
   app.use('/api', options.apiLimits || createApiLimits({ redis: stores.redis }));

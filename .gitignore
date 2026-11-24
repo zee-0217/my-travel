@@ -24,3 +24,6 @@ Thumbs.db
 *.zip
 *.har
 .envrc
+
+.vercel
+.env*

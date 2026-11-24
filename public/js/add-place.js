@@ -27,6 +27,7 @@ export function appendLocalPlace(plan, place, query, options) {
     stay.meanStraightLineMeters = null;
   }
   delete next.planId;
+  delete next.sessionToken;
   if (!next.isSample) next.localEditedAt = new Date().toISOString();
   next.validation = { ...validateItinerary(next), replanCount: 0, maxReplans: 0, stopReason: 'MANUAL_PLACE_ADDED', history: [], repairs: [] };
   return next;

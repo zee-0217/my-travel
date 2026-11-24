@@ -34,7 +34,7 @@ git push origin main
 2. GitHub 연결 권한을 주고 `zee-0217/my-travel`을 Import 합니다.
 3. Root Directory는 저장소 루트, Framework Preset은 **Express**, Node.js는 **24.x**를 선택합니다. Output Directory를 `public`로 강제 지정하지 마세요. 그러면 API가 빠진 정적 사이트가 될 수 있습니다.
 4. `vercel.json`은 설치 `npm ci`, 검사 `npm run check`, `src/app.js` 함수 최대 300초, Fluid Compute 및 CDN 보안 헤더를 지정합니다. 로컬 실행은 기존 `npm run dev`를 사용합니다.
-5. 아래 환경변수와 Redis 연결을 설정한 후 Deploy 합니다. 환경변수 변경 뒤에는 Redeploy가 필요합니다.
+5. 아래 환경변수와 세션 암호화 키를 설정한 후 Deploy 합니다. Redis 연결은 생략합니다. 환경변수 변경 뒤에는 Redeploy가 필요합니다.
 
 [공식 Express 문서](https://vercel.com/docs/frameworks/backend/express)에 맞춰 `src/app.js`에서 Express 앱을 기본 내보내기합니다. Vercel에서는 `public/` 파일이 CDN에서 제공되므로 Express의 `express.static()`에만 의존하지 않고 `vercel.json`에도 보안 헤더를 지정했습니다. 기존 로컬 정적 파일 제공은 유지합니다.
 
@@ -56,31 +56,30 @@ CLI를 선호한다면 본인 계정에서 `npx vercel@latest login`, `npx verce
 | `KMA_API_KEY` | 기상청 API허브 키, 선택 |
 | `KMA_SERVICE_KEY` | 공공데이터포털 단기예보 키, 위 키의 대안·선택 |
 | `WEATHER_FREE_FALLBACK` | `true`: 기상청 실패·미제공 시 Open-Meteo 비상업용 무료 대체 |
-| `UPSTASH_REDIS_REST_URL` | 아래 Redis의 HTTPS REST URL |
-| `UPSTASH_REDIS_REST_TOKEN` | Redis REST 쓰기 권한 토큰, Readonly Token 사용 금지 |
+| `SESSION_ENCRYPTION_KEY` | 32바이트 난수를 Base64로 인코딩한 서버 전용 Secret. 최초 한 번 생성 후 재배포 때 유지 |
 | `SESSION_NAMESPACE` | 예: `my-travel-production`. Preview는 `my-travel-preview` 등 다르게 설정 |
 | `AGENT_MAX_ITERATIONS` | `8` |
 | `AGENT_MAX_TOOL_CALLS` | `16` |
 | `AGENT_MAX_REPLANS` | `2` |
 | `AGENT_TIMEOUT_MS` | `240000`, Vercel에서 최대 `270000` |
-| `AI_REQUESTS_PER_HOUR` | 앱 전체 AI 생성·수정 요청 상한, 기본 `30` |
-| `API_REQUESTS_PER_MINUTE` | 앱 전체 외부 조회 HTTP 요청 상한, 기본 `120` |
+| `AI_REQUESTS_PER_HOUR` | 서버 인스턴스별 AI 생성·수정 요청 상한, 기본 `30` |
+| `API_REQUESTS_PER_MINUTE` | 서버 인스턴스별 외부 조회 HTTP 요청 상한, 기본 `120` |
 
 Vercel의 `VERCEL`, `VERCEL_ENV`, `PORT` 등 시스템 값은 수동 복사하지 않습니다. 로컬 `.env`의 `HOST=127.0.0.1`도 배포 변수로 복사할 필요가 없습니다. `NODE_ENV=production`은 Vercel 실행 환경에서 사용합니다.
 
-NAVER Maps Client ID는 지도 SDK 인증을 위해 브라우저에 공개되는 식별자입니다. **Client Secret과 OpenAI·지역 검색·Redis 비밀키는 브라우저에 전달하지 않습니다.**
+NAVER Maps Client ID는 지도 SDK 인증을 위해 브라우저에 공개되는 식별자입니다. **Client Secret, OpenAI·지역 검색 API 키, 세션 암호화 키는 브라우저에 전달하지 않습니다.**
 
 [환경변수 공식 안내](https://vercel.com/docs/environment-variables): 수정은 새 배포에만 적용됩니다. Preview에 운영용 키를 공유하기보다 별도 키와 호출 한도를 설정하는 편이 좋습니다.
 
-## 4. Redis가 필요한 이유와 연결
+## 4. Redis 없는 임시 수정 세션
 
-브라우저의 **저장한 여행**은 계속 localStorage를 사용하며 별도 여행 DB는 추가하지 않습니다. Redis는 서버가 확인한 검색 결과와 채팅 수정 근거를 **30분간** 보관하는 임시 세션 저장소입니다. Vercel 함수는 여러 인스턴스로 실행되므로 기존 메모리 Map만으로는 다른 인스턴스에서 수정·장소 추가가 실패합니다.
+요청에 따라 Redis 연결과 외부 DB 생성은 생략합니다. 브라우저의 **저장한 여행**은 계속 localStorage를 사용합니다. Vercel 함수가 바뀌어도 검색 장소 추가·채팅 수정을 이어갈 수 있도록 서버가 검증한 근거를 AES-256-GCM 암호화·인증 토큰으로 전달하며 유효기간은 30분입니다.
 
-Vercel 프로젝트의 Marketplace/Storage에서 **Upstash Redis**를 연결하거나 본인 Upstash 계정에서 Redis를 생성한 뒤 REST URL·Token을 등록하세요. 무료 플랜 제공 여부·현재 저장/요청 한도는 계정 화면에서 확인하고 유료 전환·자동 업그레이드를 원하지 않으면 해당 설정을 끄세요. 이 작업은 유료 서비스를 자동 개설하지 않습니다.
+토큰은 서버 전용 `SESSION_ENCRYPTION_KEY`로만 복호화·검증할 수 있습니다. 변조, 다른 프로젝트·환경의 토큰, 만료, 계획과 검색 토큰의 교차 사용을 거부합니다. API 키는 토큰 내용에 넣지 않습니다. 암호화 토큰도 임시 권한이므로 공유하지 마세요. 토큰은 브라우저 메모리에서만 이어받고 localStorage·JSON 내보내기에 포함하지 않습니다. 새로고침 뒤에는 기존처럼 저장 일정을 직접 수정하거나 새 AI 계획을 생성할 수 있습니다.
 
-변수 이름이 다르게 자동 등록되면 이 앱의 `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` 이름으로 매핑합니다. Production·Preview namespace는 분리합니다. 임시 세션에는 사용자가 입력한 여행 요청이 포함될 수 있으므로 Redis 접근 권한도 제한하세요.
+본인 터미널에서 `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"`로 암호화 키를 생성하고 결과를 Vercel의 Secret 변수에만 등록하세요. 채팅·GitHub·예시 파일에는 붙이지 않습니다. 자동 등록 스크립트는 명시적으로 승인한 경우에만 사용하며 키를 메모리에서 생성해 stdin으로 전달하고 출력하지 않습니다. 키를 바꾸면 이전 임시 세션은 만료되므로 재배포 시 기존 값을 유지합니다.
 
-Vercel에서 Redis 미설정 시 유료 AI 호출 전에 503 `SESSION_STORE_NOT_CONFIGURED`로 안내합니다. 연결 실패는 503 `SESSION_STORE_UNAVAILABLE`로 처리하며 메모리 저장으로 몰래 대체하지 않습니다. 로컬에서는 기존 메모리 저장을 계속 사용할 수 있습니다.
+Vercel에서 암호화 키 미설정 시 유료 AI 호출 전에 503 `SESSION_KEY_NOT_CONFIGURED`로 안내합니다. 토큰 변조·만료 시 410, 과도하게 큰 근거는 413으로 처리합니다. 복호화 뒤 펼친 데이터와 HTTP 본문 크기도 제한합니다. 로컬에서는 기존 메모리 세션을 계속 사용합니다. 향후 별도로 Redis REST 환경변수를 제공하면 선택적으로 공유 저장 모드를 사용할 수 있으나 이번 배포에는 연결하지 않습니다.
 
 ## 5. NAVER Maps 배포 도메인 허용
 
@@ -111,7 +110,7 @@ Web Dynamic Map은 최종 도메인에서 브라우저로 따로 확인합니다
 
 - OpenAI 401/403·400/404·429·시간 초과, NAVER 인증·쿼터·없는 경로, 날씨·TourAPI 실패는 안전한 오류/미확인으로 표시합니다. 원문 에러·키·인증 URL을 사용자 응답이나 로그로 보내지 않습니다.
 - Agent 반복·Tool 호출·재계획·전체 시간 제한을 유지합니다. 300초 함수 시간보다 앱 제한을 짧게 두며, 현재 설정은 기본 240초입니다. 해당 Vercel 플랜에서 Fluid Compute와 최대 시간이 적용되는지 확인하세요.
-- 운영 요청 한도는 Redis의 원자적 카운터로 인스턴스 간 공유합니다. 앱 전체 고정 시간 창 기준이며 **정확한 요금 상한이나 사용자별 인증을 대신하지 않습니다.** OpenAI 프로젝트 예산·사용 제한, NAVER API별 이용 한도·알림, Vercel 사용량·Spend Management도 함께 설정하세요. Tool 내부 여러 API 호출은 HTTP 요청 카운터 1건 안에 포함될 수 있습니다.
+- Redis 없이 운영하므로 앱 내 호출 카운터는 **인스턴스별 메모리 기준**이며 콜드 스타트·여러 인스턴스를 합친 전역 한도를 보장하지 않습니다. 정확한 요금 상한이나 사용자 인증도 대신하지 않습니다. Vercel Firewall/Deployment Protection, OpenAI 프로젝트 예산·사용 제한, NAVER API별 이용 한도·알림, Vercel 사용량·Spend Management를 함께 설정하세요. Tool 내부 여러 API 호출은 HTTP 요청 카운터 1건 안에 포함될 수 있습니다. 선택적 Redis 모드를 연결할 때만 원자적 공유 카운터를 사용합니다.
 - 검증 중에는 가능한 Vercel Deployment Protection·Firewall을 사용하고, 공개 이후도 비용·과도한 사용량을 감시하세요. Public GitHub 저장소와 Vercel 접근 공개 범위는 별개입니다.
 - Vercel Logs에서 상태 코드·기간·안전한 오류 코드 위주로 확인하고 요청 본문·환경변수 덤프를 기록하지 마세요. 변수 변경 후 재배포, API 활용 승인, 도메인 등록과 계정 잔액을 우선 점검합니다.
 

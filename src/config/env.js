@@ -16,9 +16,9 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 
 // Server-side only. Never serialize this object in a response or log it.
 export const env = Object.freeze({
-  deployment: Object.freeze({ vercel: process.env.VERCEL === '1' }),
+  deployment: Object.freeze({ vercel: process.env.VERCEL === '1', sessionSecret: process.env.SESSION_ENCRYPTION_KEY || '' }),
   limits: Object.freeze({ aiPerHour: agentInteger('AI_REQUESTS_PER_HOUR', 30, 1, 10000), apiPerMinute: agentInteger('API_REQUESTS_PER_MINUTE', 120, 1, 10000) }),
-  redis: Object.freeze({ url: (process.env.UPSTASH_REDIS_REST_URL || '').trim(), token: (process.env.UPSTASH_REDIS_REST_TOKEN || '').trim(), namespace: process.env.SESSION_NAMESPACE || `travel-piece-${process.env.VERCEL_ENV || 'local'}` }),
+  redis: Object.freeze({ url: (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '').trim(), token: (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '').trim(), namespace: process.env.SESSION_NAMESPACE || `travel-piece-${process.env.VERCEL_ENV || 'local'}` }),
   nodeEnv: process.env.NODE_ENV || 'development',
   host: process.env.HOST || '127.0.0.1',
   port,
