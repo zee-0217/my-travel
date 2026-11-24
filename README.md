@@ -1,6 +1,8 @@
 # 국내 여행 AI Agent
 
-**배포**: [GitHub·Vercel 설정과 환경변수 등록](docs/DEPLOYMENT.md), [검증 결과와 남은 실제 배포 확인](docs/DEPLOYMENT_CHECKS.md). Vercel은 Redis 없이 암호화된 임시 수정 세션을 사용하고, 여행 일정 저장은 계속 localStorage를 사용합니다.
+운영 사이트: **https://my-travel-peach.vercel.app** · Vercel 프로젝트: `my-travel`
+
+**배포**: [GitHub·Vercel 설정과 환경변수 등록](docs/DEPLOYMENT.md), [실제 운영 환경 검증 결과](docs/DEPLOYMENT_CHECKS.md). Vercel은 Redis 없이 암호화된 임시 수정 세션을 사용하고, 여행 일정 저장은 계속 localStorage를 사용합니다.
 
 예산 입력은 천 단위 쉼표를 지원합니다. 검색 장소는 날짜와 방문 시간을 정해 일정에 추가할 수 있고, 미리보기에서 고른 장소도 AI 생성 후 반영합니다. [장소 추가·예산 입력·관광지 사진 롤링](docs/PLAN_INTERACTIONS.md)
 

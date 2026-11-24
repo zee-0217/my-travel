@@ -2,6 +2,8 @@
 
 대상 저장소: https://github.com/zee-0217/my-travel
 
+운영 사이트: https://my-travel-peach.vercel.app · Vercel 프로젝트: `my-travel`. 실제 키 등록과 Production 배포를 사용자에게 승인받아 완료했으며, 운영 브라우저·API 검증 결과는 [DEPLOYMENT_CHECKS.md](DEPLOYMENT_CHECKS.md)에 있습니다.
+
 ## 1. Git과 GitHub
 
 이 PC에는 Git 2.55.0과 GitHub CLI가 설치되어 있습니다. 다른 PC에 Git이 없으면 [공식 설치 페이지](https://git-scm.com/downloads)에서 설치 후 터미널을 다시 열거나 Windows에서 `winget install --id Git.Git -e`를 실행하세요.
@@ -36,7 +38,7 @@ git push origin main
 4. `vercel.json`은 설치 `npm ci`, 검사 `npm run check`, `src/app.js` 함수 최대 300초, Fluid Compute 및 CDN 보안 헤더를 지정합니다. 로컬 실행은 기존 `npm run dev`를 사용합니다.
 5. 아래 환경변수와 세션 암호화 키를 설정한 후 Deploy 합니다. Redis 연결은 생략합니다. 환경변수 변경 뒤에는 Redeploy가 필요합니다.
 
-Vercel은 새 프로젝트의 **첫 배포를 Production으로만** 허용합니다. 아직 배포가 없는 상태에서는 `--environment preview`가 거부되므로, 첫 운영 배포를 명시적으로 승인한 뒤 진행해야 합니다. 그다음 배포부터 Preview 환경을 사용할 수 있습니다. 현재 프로젝트는 생성·연결까지만 완료됐습니다.
+Vercel은 새 프로젝트의 **첫 배포를 Production으로만** 허용합니다. 아직 배포가 없는 상태에서는 `--environment preview`가 거부되므로, 첫 운영 배포를 명시적으로 승인한 뒤 진행해야 합니다. 이 프로젝트는 승인을 받아 첫 운영 배포와 환경변수 등록·재배포를 완료했습니다. 이후 배포에서는 Preview 환경도 사용할 수 있습니다.
 
 [공식 Express 문서](https://vercel.com/docs/frameworks/backend/express)에 맞춰 `src/app.js`에서 Express 앱을 기본 내보내기합니다. Vercel에서는 `public/` 파일이 CDN에서 제공되므로 Express의 `express.static()`에만 의존하지 않고 `vercel.json`에도 보안 헤더를 지정했습니다. 기존 로컬 정적 파일 제공은 유지합니다.
 

@@ -29,10 +29,30 @@
 
 위 실제 로컬 호출은 로컬 메모리 세션을 사용함. 외부 Redis는 생성·연결하지 않음. Vercel용 암호화 토큰은 독립 서버 인스턴스를 사용한 자동 테스트로 검증함.
 
-## 실제 배포에서 남은 확인
+## 실제 Vercel Production 검증 — 완료
 
-GitHub 업로드 및 Vercel 프로젝트 `my-travel` 생성·계정 인증 완료. Vercel dry-run에서 Express 프리셋과 비밀 파일 제외를 확인함. 최초 Preview 배포를 시도했으나 Vercel은 새 프로젝트의 첫 배포를 Production으로만 허용하며 사용자 승인을 요구해 실제 배포는 실행되지 않음.
+운영 URL: **https://my-travel-peach.vercel.app**
 
-실제 API 키와 세션 암호화 키의 Vercel 등록 및 첫 Production 배포는 명시적 사용자 승인 대기. 키 전송은 자동 승인 검토에서 명시적 승인이 없다는 이유로 거절됐으며 재시도하지 않음. 최종 도메인에서 `npm run test:deployment -- https://실제주소 --live`를 실행하기 전까지 **실제 Vercel의 OpenAI·NAVER 호출 검증은 미완료**임. Web Dynamic Map 도메인 허용과 브라우저 마커·경로 표시도 최종 주소에서 확인해야 함.
+Vercel 프로젝트: `my-travel` (`zee0217`). GitHub `zee-0217/my-travel`과 연결됨. 최초 배포와 실제 API 키·새 세션 암호화 키의 Vercel 전송에 대한 사용자 명시적 승인을 받아 완료. 키는 stdin으로만 전송했으며 Secret 환경변수로 Preview·Production에 등록하고 재배포함. Redis는 요청대로 생략함.
+
+운영 주소에서 `scripts/smoke-deployment.mjs`와 **실제 Chrome·실제 API 응답**을 사용하는 `scripts/audit-browser-deployment.mjs --live`로 확인:
+
+| 항목 | 결과 |
+| --- | --- |
+| 운영 화면·정적 파일·보안 헤더·서버 상태 | 성공 |
+| `.env`·Git 설정·서버 소스 공개 차단 | 성공 |
+| 필요한 서버 환경변수 인식 | 모두 확인 |
+| OpenAI Responses 실제 일정 생성 | 성공, 실제 검색 장소 2곳 포함 |
+| Agent 선택 Tool | search_places, get_routes, get_weather, web_search 성공 |
+| 실제 NAVER 지역 검색·Directions 5 | 성공, 테스트 구간 3,610m·736,828ms |
+| 운영 도메인 Web Dynamic Map | ready, 마커 2개·실제 경로 선형 1개 |
+| 암호화 토큰으로 검색 장소 추가 | 성공 |
+| 실제 AI 채팅 수정·API 추가 호출 없는 되돌리기 | 성공 |
+| 일정 저장·새로고침·다시 열기 | 성공, 저장 데이터에 sessionToken 미포함 |
+| 브라우저 실행 예외 | 없음 |
+
+이 시점의 검증 배포: https://my-travel-3u6y1se2a-zee0217.vercel.app (`Ready`). 고정 운영 별칭은 위 `my-travel-peach.vercel.app`을 사용함. 배포별 생성 URL은 Vercel 인증이 필요할 수 있고, 운영 별칭은 일반 HTTPS 요청으로 확인함. 향후 커스텀 도메인·허용 주소 변경 시 지도 인증을 해당 주소에서 다시 확인해야 함.
+
+재현: `npm run audit:deployment -- https://my-travel-peach.vercel.app --live`. 실제 OpenAI·NAVER 사용량이 발생함. 키나 세션 토큰은 결과에 출력하지 않음.
 
 비용과 호출량은 각 제공자 콘솔에서 점검. 테스트가 성공해도 미래의 API 쿼터·잔액·운영 가용성을 보장하지 않음.

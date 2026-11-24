@@ -28,6 +28,7 @@
     "audit:saved": "node scripts/audit-saved-trips.mjs",
     "audit:sky": "node scripts/audit-sky-ui.mjs",
     "audit:interactions": "node scripts/audit-plan-interactions.mjs",
+    "audit:deployment": "node scripts/audit-browser-deployment.mjs",
     "test:saved": "node --test tests/saved-trips.test.js",
     "audit:services": "node scripts/audit-services.mjs --live",
     "audit:live": "node scripts/audit-browser-live.mjs --live",
