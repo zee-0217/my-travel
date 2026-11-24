@@ -1,0 +1,60 @@
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { createApp } from '../src/app.js';
+import { createAgentPlanner } from '../src/agents/agent-loop.js';
+import { createBrowserClient } from './browser-client.mjs';
+
+let receivedBudget, additions = 0;
+const selectedPlace = { name: '직접 고른 카페', address: '부산 테스트 주소', roadAddress: '', category: '카페', coordinates: { longitude: null, latitude: null }, link: null };
+const generatePlan = createAgentPlanner({ getModel: () => 'test-model', maxReplans: 0, getClient: () => ({ responses: { create: async (params) => {
+  const input = JSON.parse(params.input[0].content); receivedBudget = input.budget;
+  return { status: 'completed', output: [], output_text: JSON.stringify({ title: '사용자 장소 포함 여행', summary: '여행', budgetCallId: null, replanReason: null, warnings: [], lodgings: [], days: Array.from({ length: input.duration }, () => ({ title: '하루', stops: ['10:00','13:00'].map((time) => ({ title: '관광 제안', time, endTime: time === '10:00' ? '11:00' : '14:00', category: '관광', description: '관광', stay: '여유 있게', placeRef: null, routeCallId: null })) })) }) };
+} } }) });
+const app = createApp({ generatePlan, searchPlaces: async () => ({ query: '부산 카페', returnedCount: 1, places: [selectedPlace] }) });
+app.use((_req, _res, next) => { additions++; next(); });
+const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
+const browser = await createBrowserClient();
+try {
+  await browser.command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+  await browser.command('Page.addScriptToEvaluateOnNewDocument', { source: 'const realInterval=window.setInterval;window.setInterval=(callback,delay,...args)=>{if(delay===6500)window.rollTouristPhoto=callback;return realInterval(callback,delay,...args)};' });
+  await browser.command('Page.navigate', { url: `http://127.0.0.1:${server.address().port}` });
+  await browser.until("document.documentElement.dataset.appReady === 'true'");
+  assert.equal(await browser.evaluate("document.querySelector('#budget').value"), '800,000');
+  await browser.evaluate("document.querySelector('#budget').value='1200000';document.querySelector('#budget').dispatchEvent(new Event('input',{bubbles:true}))");
+  assert.equal(await browser.evaluate("document.querySelector('#budget').value"), '1,200,000');
+  await browser.click('#hero-photo-next');
+  const photoRegion = await browser.evaluate("document.querySelector('#hero-destination-name').textContent.split(' · ')[0]");
+  await browser.click('#random-trip-button'); assert.equal(await browser.evaluate("document.querySelector('#region').value"), photoRegion);
+  await browser.evaluate("document.querySelector('#hero-art')?.blur();document.activeElement.blur()");
+  await browser.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
+  await browser.click('#hero-photo-toggle'); // Reduced-motion starts paused: explicitly resume.
+  await browser.evaluate('document.activeElement.blur()');
+  await browser.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
+  const before = await browser.evaluate("document.querySelector('#hero-destination-name').textContent");
+  await browser.evaluate('window.rollTouristPhoto()');
+  assert.notEqual(await browser.evaluate("document.querySelector('#hero-destination-name').textContent"), before);
+  await browser.click('#hero-photo-toggle');
+  await browser.evaluate("document.querySelector('#budget').value='1200000';document.querySelector('#budget').dispatchEvent(new Event('input'));document.querySelector('#duration').value='2'");
+  await browser.click('#place-search-button');
+  await browser.until("document.querySelectorAll('.place-add-button').length === 1");
+  await browser.evaluate("document.querySelector('.place-itinerary-controls input[type=time]').value='11:30';document.querySelectorAll('.place-itinerary-controls input[type=time]')[1].value='12:30'");
+  await browser.click('.place-add-button');
+  await browser.until("document.querySelector('#timeline').textContent.includes('직접 고른 카페')");
+  await browser.click('#undo-edit'); assert.ok(!(await browser.evaluate("document.querySelector('#timeline').textContent")).includes('직접 고른 카페'));
+  await browser.click('.place-add-button');
+  await browser.until("document.querySelector('#timeline').textContent.includes('직접 고른 카페')");
+  await browser.click('#generate-button');
+  await browser.until("document.querySelector('#results-title').textContent === '사용자 장소 포함 여행' && !document.querySelector('#generate-button').disabled");
+  assert.equal(receivedBudget, 1200000);
+  assert.match(await browser.evaluate("document.querySelector('#timeline').textContent"), /직접 고른 카페/);
+  assert.equal(browser.responses.filter((item) => item.path === '/api/plan/places' && item.status === 200).length, 1);
+  await browser.click('.place-add-button');
+  assert.match(await browser.evaluate("document.querySelector('.place-add-feedback').textContent"), /이미 포함/);
+  await browser.click('#save-trip-button');
+  await browser.command('Page.reload', { ignoreCache: true }); await browser.until("document.documentElement.dataset.appReady === 'true'");
+  await browser.click('.saved-trip-open');
+  assert.match(await browser.evaluate("document.querySelector('#timeline').textContent"), /직접 고른 카페/);
+  assert.equal(await browser.evaluate("document.querySelector('#budget').value"), '1,200,000');
+  assert.deepEqual(browser.errors, []);
+  console.log(JSON.stringify({ status: 'passed', checks: ['comma-formatted input with numeric server payload', 'pictured region selection', 'carousel play and pause', 'search place addition to preview', 'undo restores pending selection', 'selection carried into generated Agent plan', 'duplicate prevention', 'saved plan and budget restored'] }));
+} finally { await browser.close(); await new Promise((resolve) => { server.close(resolve); server.closeAllConnections(); }); }

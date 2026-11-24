@@ -1,0 +1,43 @@
+{
+  "name": "domestic-travel-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "국내 여행 AI Agent 개발 환경",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "check": "node scripts/check.js",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "check:deploy": "npm run check && npm test && npm run check:secrets",
+    "test:deployment": "node scripts/smoke-deployment.mjs",
+    "test": "node --test",
+    "test:places": "node --test tests/places.test.js",
+    "test:places:live": "node scripts/search-places-live.js",
+    "test:routes": "node --test tests/routes.test.js",
+    "test:routes:live": "node scripts/routes-live.js",
+    "test:budget": "node --test tests/budget.test.js",
+    "test:weather": "node --test tests/weather.test.js",
+    "test:validation": "node --test tests/itinerary-validation.test.js tests/agent-loop.test.js tests/plan.test.js",
+    "test:edit": "node --test tests/plan-edit.test.js",
+    "test:lodgings": "node --test tests/lodgings.test.js tests/trip-map.test.js",
+    "audit:controls": "node scripts/audit-browser-controls.mjs",
+    "audit:saved": "node scripts/audit-saved-trips.mjs",
+    "audit:sky": "node scripts/audit-sky-ui.mjs",
+    "audit:interactions": "node scripts/audit-plan-interactions.mjs",
+    "test:saved": "node --test tests/saved-trips.test.js",
+    "audit:services": "node scripts/audit-services.mjs --live",
+    "audit:live": "node scripts/audit-browser-live.mjs --live",
+    "test:weather:live": "node scripts/weather-live.js",
+    "demo:budget": "node scripts/budget-demo.js"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "openai": "^7.57.0"
+  }
+}

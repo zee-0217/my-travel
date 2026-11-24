@@ -1,0 +1,26 @@
+.env
+data/
+node_modules/
+.vercel/
+.env.*
+!.env.example
+
+# Credentials, local settings, generated files
+*.pem
+*.key
+.aws/
+.npmrc
+credentials*.json
+npm-debug.log*
+*.log
+logs/
+coverage/
+dist/
+.DS_Store
+Thumbs.db
+.local-preview/
+.agents/
+.codex/
+*.zip
+*.har
+.envrc

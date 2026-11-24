@@ -1,0 +1,21 @@
+export const objectSchema = (properties) => ({ type: 'object', properties, required: Object.keys(properties), additionalProperties: false });
+const point = objectSchema({ longitude: { type: 'number', minimum: -180, maximum: 180 }, latitude: { type: 'number', minimum: -90, maximum: 90 } });
+export const functionTools = [
+  { type: 'function', name: 'get_place_details', strict: true, description: '검색된 장소의 공식 운영시간, 숙소 체크인 안내와 공개 참고 요금표를 무료 한국관광공사 TourAPI로 확인합니다. 필요한 장소만 조회하세요. 실시간 숙박 실요금·남은 객실은 제공하지 않습니다. placeRef는 search_places 결과의 callId와 index입니다.', parameters: objectSchema({ placeRef: objectSchema({ callId: { type: 'string', minLength: 1, maxLength: 200 }, index: { type: 'integer', minimum: 0, maximum: 4 } }), date: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' } }) },
+  { type: 'function', name: 'get_weather', strict: true, description: '국내 지역과 날짜의 기상청 예보를 조회하고 실패·미제공 시 무료 Open-Meteo로 대체합니다. 실제 source를 표시하세요. 야외 일정 또는 비에 따른 조정 등 필요할 때만 선택하세요. 최대 16일 범위 밖은 미확인입니다. location은 검색에서 확인된 좌표 또는 null(지역 대표 지점)입니다.', parameters: objectSchema({ region: { type: 'string', minLength: 1, maxLength: 40 }, date: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' }, location: { anyOf: [point, { type: 'null' }] } }) },
+  { type: 'function', name: 'search_places', strict: true, description: '국내 지역과 단일 키워드(관광지, 카페 등) 또는 한 상호로 실제 장소·주소·카테고리·WGS84 좌표를 최대 5개 검색합니다. 여러 장소 이름을 한 키워드에 공백으로 나열하지 마세요. 영업시간·가격·평점은 제공하지 않습니다. 필요할 때만 선택하고 기존 결과를 재사용하세요.', parameters: objectSchema({ region: { type: 'string', minLength: 1, maxLength: 40 }, keyword: { type: 'string', minLength: 1, maxLength: 80 }, display: { type: 'integer', minimum: 1, maximum: 5 }, sort: { type: 'string', enum: ['random', 'comment'] } }) },
+  { type: 'function', name: 'get_routes', strict: true, description: '이번 요청에서 search_places가 반환한 두 장소의 좌표로 자동차 거리와 시간을 조회합니다. 임의 좌표를 만들지 마세요. 도보/대중교통은 확인 불가입니다.', parameters: objectSchema({ start: point, goal: point, mode: { type: 'string', enum: ['driving', 'walking', 'transit'] }, option: { type: 'string', enum: ['traoptimal', 'trafast', 'tracomfort', 'traavoidtoll', 'traavoidcaronly'] } }) },
+  { type: 'function', name: 'calculate_budget', strict: true, description: '전체 예산과 항목별 가격을 합산합니다. 확인된 단가가 없는 항목은 amount:null,status:unknown으로 전달하세요. 임의 가격/평균 단가를 만들지 마세요. 서버는 근거 없는 숫자를 미확인으로 바꿉니다.', parameters: objectSchema({ totalBudget: { type: 'integer', minimum: 0, maximum: 100000000 }, items: { type: 'array', maxItems: 40, items: objectSchema({ category: { type: 'string', enum: ['food', 'accommodation', 'transport', 'activities', 'other'] }, label: { type: 'string', minLength: 1, maxLength: 150 }, amount: { type: ['integer', 'null'], minimum: 0, maximum: 100000000 }, status: { type: 'string', enum: ['confirmed', 'estimated', 'unknown'] }, source: { type: ['string', 'null'], maxLength: 250 } }) } }) },
+];
+
+// The same strict schemas validate model arguments again on the server.
+export function matchesSchema(value, schema) {
+  if (Array.isArray(schema.type)) return schema.type.some((type) => matchesSchema(value, { ...schema, type }));
+  if (schema.anyOf) return schema.anyOf.some((part) => matchesSchema(value, part));
+  if (schema.type === 'null') return value === null;
+  if (schema.type === 'object') return Boolean(value && typeof value === 'object' && !Array.isArray(value)) && Object.keys(value).every((key) => Object.hasOwn(schema.properties, key)) && schema.required.every((key) => Object.hasOwn(value, key) && matchesSchema(value[key], schema.properties[key]));
+  if (schema.type === 'array') return Array.isArray(value) && value.length >= (schema.minItems ?? 0) && value.length <= (schema.maxItems ?? Infinity) && value.every((item) => matchesSchema(item, schema.items));
+  if (schema.type === 'number' || schema.type === 'integer') return typeof value === 'number' && Number.isFinite(value) && (schema.type !== 'integer' || Number.isSafeInteger(value)) && value >= (schema.minimum ?? -Infinity) && value <= (schema.maximum ?? Infinity);
+  if (schema.type === 'string') return typeof value === 'string' && value.trim().length >= (schema.minLength ?? 0) && value.length <= (schema.maxLength ?? Infinity) && (!schema.enum || schema.enum.includes(value)) && (!schema.pattern || new RegExp(schema.pattern).test(value));
+  return false;
+}
