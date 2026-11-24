@@ -36,6 +36,8 @@ git push origin main
 4. `vercel.json`은 설치 `npm ci`, 검사 `npm run check`, `src/app.js` 함수 최대 300초, Fluid Compute 및 CDN 보안 헤더를 지정합니다. 로컬 실행은 기존 `npm run dev`를 사용합니다.
 5. 아래 환경변수와 세션 암호화 키를 설정한 후 Deploy 합니다. Redis 연결은 생략합니다. 환경변수 변경 뒤에는 Redeploy가 필요합니다.
 
+Vercel은 새 프로젝트의 **첫 배포를 Production으로만** 허용합니다. 아직 배포가 없는 상태에서는 `--environment preview`가 거부되므로, 첫 운영 배포를 명시적으로 승인한 뒤 진행해야 합니다. 그다음 배포부터 Preview 환경을 사용할 수 있습니다. 현재 프로젝트는 생성·연결까지만 완료됐습니다.
+
 [공식 Express 문서](https://vercel.com/docs/frameworks/backend/express)에 맞춰 `src/app.js`에서 Express 앱을 기본 내보내기합니다. Vercel에서는 `public/` 파일이 CDN에서 제공되므로 Express의 `express.static()`에만 의존하지 않고 `vercel.json`에도 보안 헤더를 지정했습니다. 기존 로컬 정적 파일 제공은 유지합니다.
 
 CLI를 선호한다면 본인 계정에서 `npx vercel@latest login`, `npx vercel@latest link`, `npx vercel@latest`로 Preview를 생성하고 검증 후 `npx vercel@latest --prod`를 실행할 수 있습니다. 명령 인수에 API 키를 넣지 마세요.
